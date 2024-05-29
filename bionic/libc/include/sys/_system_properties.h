@@ -29,7 +29,7 @@
 #ifndef _INCLUDE_SYS__SYSTEM_PROPERTIES_H
 #define _INCLUDE_SYS__SYSTEM_PROPERTIES_H
 
-#include <sys/cdefs.h>
+#include <sys/_cdefs.h>
 #include <stdint.h>
 
 #ifndef _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_

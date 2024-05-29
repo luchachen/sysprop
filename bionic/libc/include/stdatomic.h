@@ -30,12 +30,10 @@
 #ifndef _STDATOMIC_H_
 #define	_STDATOMIC_H_
 
-#include <sys/cdefs.h>
-
 #if defined(__cplusplus) && __cplusplus >= 201103L && __has_include(<atomic>)
-# if __has_feature(cxx_atomic)
+//# if __has_feature(cxx_atomic)
 #  define _STDATOMIC_HAVE_ATOMIC
-# endif
+//# endif
 #endif
 
 #ifdef _STDATOMIC_HAVE_ATOMIC

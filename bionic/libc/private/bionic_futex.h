@@ -32,7 +32,7 @@
 #include <linux/futex.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <sys/cdefs.h>
+#include <sys/_cdefs.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 

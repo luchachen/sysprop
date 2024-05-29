@@ -40,7 +40,17 @@
  * `__BIONIC__` is always defined if you're building with bionic. See
  * https://android.googlesource.com/platform/bionic/+/master/docs/defines.md.
  */
+#ifdef __ANDROID__
 #define __BIONIC__ 1
+#endif
+#include <features.h>
+#ifdef __GLIBC__
+#include <sys/cdefs.h>
+#include <cstring>
+//bionic/libc/kernel/uapi/linux/prctl.h
+#define PR_SET_VMA 0x53564d41
+#define PR_SET_VMA_ANON_NAME 0
+#endif
 
 #if defined(__cplusplus)
 #define __BEGIN_DECLS extern "C" {
@@ -70,11 +80,11 @@
  * strings produced by the __STRING macro, but this only works with ANSI C.
  */
 
-#define	__P(protos)	protos		/* full-blown ANSI C */
+//#define	__P(protos)	protos		/* full-blown ANSI C */
 
-#define	__CONCAT1(x,y)	x ## y
-#define	__CONCAT(x,y)	__CONCAT1(x,y)
-#define	___CONCAT(x,y)	__CONCAT(x,y)
+//#define	__CONCAT1(x,y)	x ## y
+//#define	__CONCAT(x,y)	__CONCAT1(x,y)
+//#define	___CONCAT(x,y)	__CONCAT(x,y)
 
 #define	__STRING(x)	#x
 #define	___STRING(x)	__STRING(x)
@@ -83,9 +93,9 @@
 #define	__inline	inline		/* convert to C++ keyword */
 #endif /* !__cplusplus */
 
+#undef __always_inline
 #define __always_inline __attribute__((__always_inline__))
-#define __attribute_const__ __attribute__((__const__))
-#define __attribute_pure__ __attribute__((__pure__))
+//#define __attribute_pure__ __attribute__((__pure__))
 #define __dead __attribute__((__noreturn__))
 #define __noreturn __attribute__((__noreturn__))
 #define __mallocfunc  __attribute__((__malloc__))
@@ -129,10 +139,11 @@
 #define	__predict_true(exp)	__builtin_expect((exp) != 0, 1)
 #define	__predict_false(exp)	__builtin_expect((exp) != 0, 0)
 
-#define __wur __attribute__((__warn_unused_result__))
+//#define __wur __attribute__((__warn_unused_result__))
 
 #define __errorattr(msg) __attribute__((unavailable(msg)))
-#define __warnattr(msg) __attribute__((deprecated(msg)))
+//glibc --
+//#define __warnattr(msg) __attribute__((deprecated(msg)))
 #define __warnattr_real(msg) __attribute__((deprecated(msg)))
 #define __enable_if(cond, msg) __attribute__((enable_if(cond, msg)))
 #define __clang_error_if(cond, msg) __attribute__((diagnose_if(cond, msg, "error")))
@@ -269,7 +280,8 @@
 #endif
 
 #define __bosn(s, n) __builtin_object_size((s), (n))
-#define __bos(s) __bosn((s), __bos_level)
+//glibc --
+//#define __bos(s) __bosn((s), __bos_level)
 
 #if defined(__BIONIC_FORTIFY)
 #  define __bos0(s) __bosn((s), 0)
@@ -369,8 +381,10 @@ int __size_mul_overflow(__SIZE_TYPE__ a, __SIZE_TYPE__ b, __SIZE_TYPE__ *result)
  */
 #define __unsafe_check_mul_overflow(x, y) ((__SIZE_TYPE__)-1 / (x) < (y))
 
+#ifdef __ANDROID__
 #include <android/versioning.h>
 #include <android/api-level.h>
 #if __has_include(<android/ndk-version.h>)
 #include <android/ndk-version.h>
+#endif
 #endif

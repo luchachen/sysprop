@@ -29,7 +29,7 @@
 
 #pragma once
 
-#include <sys/cdefs.h>
+#include <sys/_cdefs.h>
 #include <sys/types.h>
 #include <stdbool.h>
 

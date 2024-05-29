@@ -29,11 +29,13 @@
 #ifndef _INCLUDE_SYS_SYSTEM_PROPERTIES_H
 #define _INCLUDE_SYS_SYSTEM_PROPERTIES_H
 
-#include <sys/cdefs.h>
+#include <sys/_cdefs.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
+//gnu unuse __INTRODUCED_IN
+#define __INTRODUCED_IN(x)
 __BEGIN_DECLS
 
 typedef struct prop_info prop_info;
@@ -96,4 +98,5 @@ const prop_info* __system_property_find_nth(unsigned __n);
 
 __END_DECLS
 
+ #undef __INTRODUCED_IN
 #endif
