@@ -40,8 +40,8 @@
 
 __BEGIN_DECLS
 
-#define PROP_SERVICE_NAME "property_service"
-#define PROP_FILENAME "/dev/__properties__"
+#define PROP_SERVICE_NAME "property_service.socket"
+#define PROP_FILENAME "/run/__properties__"
 
 #define PROP_MSG_SETPROP 1
 #define PROP_MSG_SETPROP2 0x00020001

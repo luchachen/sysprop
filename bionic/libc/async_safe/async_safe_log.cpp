@@ -37,8 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/socket.h>
-#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <sys/un.h>
@@ -47,38 +45,12 @@
 
 #include <async_safe/log.h>
 
-#include <cutils/memory.h>
 #include "private/CachedProperty.h"
 #include "private/ErrnoRestorer.h"
 #include "private/ScopedPthreadMutexLocker.h"
 void __assert(const char* file, int line, const char* failed_expression) {
   async_safe_fatal("%s:%d: assertion \"%s\" failed", file, line, failed_expression);
 }
-
-// Don't call libc's close or socket, since it might call back into us as a result of fdsan/fdtrack.
-#pragma GCC poison close
-static int __close(int fd) {
-  return syscall(__NR_close, fd);
-}
-
-static int __socket(int domain, int type, int protocol) {
-#if defined(__i386__)
-  unsigned long args[3] = {static_cast<unsigned long>(domain), static_cast<unsigned long>(type),
-                           static_cast<unsigned long>(protocol)};
-  return syscall(__NR_socketcall, SYS_SOCKET, &args);
-#else
-  return syscall(__NR_socket, domain, type, protocol);
-#endif
-}
-
-// Must be kept in sync with frameworks/base/core/java/android/util/EventLog.java.
-enum AndroidEventLogType {
-  EVENT_TYPE_INT = 0,
-  EVENT_TYPE_LONG = 1,
-  EVENT_TYPE_STRING = 2,
-  EVENT_TYPE_LIST = 3,
-  EVENT_TYPE_FLOAT = 4,
-};
 
 struct BufferOutputStream {
  public:
@@ -471,7 +443,7 @@ int async_safe_format_fd(int fd, const char* format, ...) {
   return result;
 }
 
-static int write_stderr(const char* tag, const char* msg) {
+static inline int write_stderr(const char* tag, const char* msg) {
   iovec vec[4];
   vec[0].iov_base = const_cast<char*>(tag);
   vec[0].iov_len = strlen(tag);
@@ -486,71 +458,9 @@ static int write_stderr(const char* tag, const char* msg) {
   return result;
 }
 
-static int open_log_socket() {
-  // ToDo: Ideally we want this to fail if the gid of the current
-  // process is AID_LOGD, but will have to wait until we have
-  // registered this in private/android_filesystem_config.h. We have
-  // found that all logd crashes thus far have had no problem stuffing
-  // the UNIX domain socket and moving on so not critical *today*.
-
-  int log_fd = TEMP_FAILURE_RETRY(__socket(PF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0));
-  if (log_fd == -1) {
-    return -1;
-  }
-
-  union {
-    struct sockaddr addr;
-    struct sockaddr_un addrUn;
-  } u;
-  memset(&u, 0, sizeof(u));
-  u.addrUn.sun_family = AF_UNIX;
-  strlcpy(u.addrUn.sun_path, "/dev/socket/logdw", sizeof(u.addrUn.sun_path));
-
-  if (TEMP_FAILURE_RETRY(connect(log_fd, &u.addr, sizeof(u.addrUn))) != 0) {
-    __close(log_fd);
-    return -1;
-  }
-
-  return log_fd;
-}
-
-struct log_time {  // Wire format
-  uint32_t tv_sec;
-  uint32_t tv_nsec;
-};
-
 int async_safe_write_log(int priority, const char* tag, const char* msg) {
-  int main_log_fd = open_log_socket();
-  if (main_log_fd == -1) {
     // Try stderr instead.
     return write_stderr(tag, msg);
-  }
-
-  iovec vec[6];
-  char log_id = (priority == ANDROID_LOG_FATAL) ? -1 : -1;
-  vec[0].iov_base = &log_id;
-  vec[0].iov_len = sizeof(log_id);
-  uint16_t tid = gettid();
-  vec[1].iov_base = &tid;
-  vec[1].iov_len = sizeof(tid);
-  timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  log_time realtime_ts;
-  realtime_ts.tv_sec = ts.tv_sec;
-  realtime_ts.tv_nsec = ts.tv_nsec;
-  vec[2].iov_base = &realtime_ts;
-  vec[2].iov_len = sizeof(realtime_ts);
-
-  vec[3].iov_base = &priority;
-  vec[3].iov_len = 1;
-  vec[4].iov_base = const_cast<char*>(tag);
-  vec[4].iov_len = strlen(tag) + 1;
-  vec[5].iov_base = const_cast<char*>(msg);
-  vec[5].iov_len = strlen(msg) + 1;
-
-  int result = TEMP_FAILURE_RETRY(writev(main_log_fd, vec, sizeof(vec) / sizeof(vec[0])));
-  __close(main_log_fd);
-  return result;
 }
 
 int async_safe_format_log_va_list(int priority, const char* tag, const char* format, va_list args) {

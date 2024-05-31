@@ -47,6 +47,7 @@
 #ifdef __GLIBC__
 #include <sys/cdefs.h>
 #include <cstring>
+#include <openbsd_string.h>
 //bionic/libc/kernel/uapi/linux/prctl.h
 #define PR_SET_VMA 0x53564d41
 #define PR_SET_VMA_ANON_NAME 0
